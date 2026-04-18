@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SmartSpend | Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="auth-card">
+        <h2>Welcome Back</h2>
+        <div class="auth-subtitle">Sign in to continue to SmartSpend</div>
+        <form action="/login" method="POST">
+            <input class="auth-box" type="text" name="username" placeholder="Username" required>
+            <input class="auth-box" type="password" name="password" placeholder="Password" required>
+            <button type="submit">Sign In</button>
+        </form>
+        <div class="auth-footer">
+            Don't have an account? <a href="{{ url_for('signup') }}">Create Account</a>
+        </div>
+    </div>
+</body>
+</html>

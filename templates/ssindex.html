@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SmartSpend | Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="dashboard-container">
+        <div class="navbar">
+            <h2>👋 Welcome, {{ user_name }}!</h2>
+            <div>
+                <a href="{{ url_for('history') }}">Delete History</a>
+                <a href="{{ url_for('logout') }}" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #ef4444;">Logout</a>
+            </div>
+        </div>
+        
+        <div class="summary-card">
+            <p>Total Balance Spent</p>
+            <h1>₹{{ "%.2f"|format(total_val) }}</h1>
+            <span>INR - Indian Rupee</span>
+        </div>
+
+        <div class="card">
+            <h2>Add New Expense</h2>
+            <form action="/add" method="POST">
+                <input type="text" name="category" placeholder="Category (e.g. Food)" required>
+                <input type="number" step="0.01" name="amount" placeholder="Amount" required>
+                <button type="submit">Add Expense</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Recent Transactions</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in expenses %}
+                    <tr>
+                        <td><strong>{{ row[2] }}</strong></td> 
+                        <td>₹{{ "%.2f"|format(row[3]) }}</td> 
+                        <td>{{ row[4] }}</td>
+                        <td><a href="{{ url_for('delete', id=row[0]) }}" class="btn-delete">Delete</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not expenses %}
+                <p style="text-align: center; color: #94a3b8; padding: 20px;">No expenses found. Add your first one above!</p>
+            {% endif %}
+        </div>
+
+        <footer>
+            Logged in as User #{{ session['USER_ID'] }}
+        </footer>
+    </div>
+</body>
+</html>

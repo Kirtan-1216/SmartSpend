@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SmartSpend | History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="navbar">
+            <h2>📜 Deletion History</h2>
+            <div>
+                <a href="{{ url_for('home') }}" style="background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.5); color: #38bdf8;">Back to Home</a>
+                <a href="{{ url_for('logout') }}" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #ef4444;">Logout</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Deleted Transactions</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Original Amount</th>
+                        <th>Original Date</th>
+                        <th>Time of Deletion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in history %}
+                    <tr>
+                        <td><strong>{{ row[0] }}</strong></td>
+                        <td>₹{{ "%.2f"|format(row[1]) }}</td>
+                        <td>{{ row[2] }}</td>
+                        <td style="color: #ef4444; font-size: 0.9rem;">{{ row[3] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not history %}
+                <p style="text-align: center; color: #94a3b8; padding: 20px;">No deleted records found.</p>
+            {% endif %}
+        </div>
+        
+        <footer>
+            Viewing History for {{ user_name }}
+        </footer>
+    </div>
+</body>
+</html>
