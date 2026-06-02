@@ -30,6 +30,10 @@ def create_table():
             DELETED_AT TEXT NOT NULL,
             FOREIGN KEY (USER_ID) REFERENCES users (id))''')
         
+        try:
+            cursor.execute('ALTER TABLE users ADD COLUMN budget_limit REAL DEFAULT 0.0')
+        except sqlite3.OperationalError:
+            pass
 
         connection.commit()
         print("DEBUG: Database Tables Created Successfully")
@@ -128,6 +132,94 @@ def get_username(user_id):
     except sqlite3.Error as e:
         print(f"DEBUG: Get Username Error: {e}")
         return "User"
+
+# 4. ANALYTICS OPERATIONS
+def get_category_totals(user_id):
+    """
+    System Design & System Analysis:
+    - Purpose: Aggregates expense data by category for visualization.
+    - Input: user_id (int)
+    - Output: List of tuples (Category, Total Amount)
+    """
+    try:
+        with sqlite3.connect("finance_tracker.db") as connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT CATEGORY, SUM(AMOUNT) FROM expenses WHERE USER_ID = ? GROUP BY CATEGORY", (user_id,))
+            return cursor.fetchall()
+    except sqlite3.Error as e:
+        print(f"DEBUG: Category Totals Error: {e}")
+        return []
+
+def get_last_7_days_spending(user_id):
+    """
+    System Design & System Analysis:
+    - Purpose: Retrieves daily aggregate spending for the last 7 days for trend analysis.
+    - Input: user_id (int)
+    - Output: List of tuples (Date, Total Amount)
+    """
+    from datetime import datetime, timedelta
+    date_7_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    try:
+        with sqlite3.connect("finance_tracker.db") as connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT DATE, SUM(AMOUNT) FROM expenses WHERE USER_ID = ? AND DATE >= ? GROUP BY DATE ORDER BY DATE", (user_id, date_7_days_ago))
+            return cursor.fetchall()
+    except sqlite3.Error as e:
+        print(f"DEBUG: 7 Days Data Error: {e}")
+        return []
+
+def update_budget_limit(user_id, limit):
+    """
+    System Design & System Analysis:
+    - Purpose: Updates the global budget limit value.
+    - Input: user_id (int), limit (float)
+    - Output: Boolean success status
+    """
+    try:
+        with sqlite3.connect("finance_tracker.db") as connection:
+            cursor = connection.cursor()
+            cursor.execute("UPDATE users SET budget_limit = ? WHERE id = ?", (limit, user_id))
+            connection.commit()
+            return True
+    except sqlite3.Error as e:
+        print(f"DEBUG: Update Budget Limit Error: {e}")
+        return False
+
+def get_budget_limit(user_id):
+    """
+    System Design & System Analysis:
+    - Purpose: Retrieves the global budget limit, defaulting to 0.0.
+    """
+    try:
+        with sqlite3.connect("finance_tracker.db") as connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT budget_limit FROM users WHERE id = ?", (user_id,))
+            result = cursor.fetchone()
+            if result and result[0] is not None:
+                return float(result[0])
+            return 0.0
+    except sqlite3.Error as e:
+        print(f"DEBUG: Get Budget Limit Error: {e}")
+        return 0.0
+
+def get_category_monthly_spend(user_id, category):
+    """
+    System Design & System Analysis:
+    - Purpose: Summarizes expenses for a given category within the current month.
+    """
+    from datetime import datetime
+    current_month = datetime.now().strftime("%Y-%m-01")
+    try:
+        with sqlite3.connect("finance_tracker.db") as connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT SUM(AMOUNT) FROM expenses WHERE USER_ID = ? AND CATEGORY = ? AND DATE >= ?", (user_id, category, current_month))
+            result = cursor.fetchone()
+            if result and result[0] is not None:
+                return float(result[0])
+            return 0.0
+    except sqlite3.Error as e:
+        print(f"DEBUG: Category Monthly Spend Error: {e}")
+        return 0.0
     
 # Function to log and delete
 def delete_expense_with_history(expense_id, user_id):

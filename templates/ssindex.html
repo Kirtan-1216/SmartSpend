@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>SmartSpend | Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -25,10 +26,48 @@
             </div>
         </div>
         
-        <div class="summary-card">
-            <p>Total Balance Spent</p>
-            <h1>₹{{ "%.2f"|format(total_val) }}</h1>
-            <span>INR - Indian Rupee</span>
+        <style>
+            .summary-card.over-budget {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+                box-shadow: 0 15px 35px -10px rgba(239, 68, 68, 0.5) !important;
+            }
+        </style>
+
+        {% if budget and budget > 0 %}
+            {% set perc = (total_val / budget) * 100 %}
+            {% if perc > 100 %}
+                {% set perc = 100 %}
+            {% endif %}
+            <div class="summary-card {% if total_val > budget %}over-budget{% endif %}">
+                <p>Total Balance Spent</p>
+                <h1>₹{{ "%.2f"|format(total_val) }}</h1>
+                <span>Budget Limit: ₹{{ "%.2f"|format(budget) }}</span>
+                
+                <div style="margin-top: 20px; text-align: left;">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px;">
+                        <span>Budget Usage</span>
+                        <span>{{ "%.1f"|format((total_val/budget)*100) }}%</span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
+                        <div style="width: {{ perc }}%; height: 100%; background: #fff; transition: width 0.5s ease;"></div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="summary-card">
+                <p>Total Balance Spent</p>
+                <h1>₹{{ "%.2f"|format(total_val) }}</h1>
+                <span>INR - Indian Rupee</span>
+            </div>
+        {% endif %}
+
+        <div class="card" style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px;">
+                <canvas id="pieChart"></canvas>
+            </div>
+            <div style="flex: 1; min-width: 300px;">
+                <canvas id="barChart"></canvas>
+            </div>
         </div>
 
         <div class="card">
@@ -37,6 +76,15 @@
                 <input type="text" name="category" placeholder="Category (e.g. Food)" required>
                 <input type="number" step="0.01" name="amount" placeholder="Amount" required>
                 <button type="submit">Add Expense</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Smart Add Expense</h2>
+            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 15px; margin-top: -10px;">Type naturally! e.g., "Spent 500 on Pizza" or "Petrol 1200"</p>
+            <form action="/smart_add" method="POST">
+                <input type="text" name="smart_input" placeholder="Enter your expense description" required>
+                <button type="submit">Smart Add</button>
             </form>
         </div>
 
@@ -67,9 +115,80 @@
             {% endif %}
         </div>
 
+        <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px; margin-bottom: 20px;">
+                <h2>⚙️ User Settings</h2>
+                <form action="/settings" method="POST" style="margin-bottom: 10px;">
+                    <input type="number" step="0.01" name="budget_limit" placeholder="Overall Monthly Budget" value="{{ budget }}" required>
+                    <button type="submit">Save Budget</button>
+                </form>
+                <p style="color: #94a3b8; font-size: 13px; margin: 0;">If > 0, you'll be visually warned when your total spending exceeds this limit.</p>
+            </div>
+            <div style="flex: 1; min-width: 300px; text-align: right;">
+                <h2>📊 Data Export</h2>
+                <a href="{{ url_for('export_csv') }}" style="display: inline-block; background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: 600; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3);">Download CSV</a>
+            </div>
+        </div>
+
         <footer>
             Logged in as User #{{ session['USER_ID'] }}
         </footer>
     </div>
+    
+    <script>
+        fetch('/api/data')
+            .then(response => response.json())
+            .then(data => {
+                const pieCtx = document.getElementById('pieChart').getContext('2d');
+                const barCtx = document.getElementById('barChart').getContext('2d');
+
+                if (data.categories && Object.keys(data.categories).length > 0) {
+                    new Chart(pieCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: Object.keys(data.categories),
+                            datasets: [{
+                                data: Object.values(data.categories),
+                                backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'bottom', labels: { color: '#f8fafc' } },
+                                title: { display: true, text: 'Spending by Category', color: '#f8fafc' }
+                            }
+                        }
+                    });
+                }
+
+                if (data.days && Object.keys(data.days).length > 0) {
+                    new Chart(barCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(data.days),
+                            datasets: [{
+                                label: 'Daily Spending',
+                                data: Object.values(data.days),
+                                backgroundColor: '#4f46e5',
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false },
+                                title: { display: true, text: 'Last 7 Days Spending', color: '#f8fafc' }
+                            },
+                            scales: {
+                                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                                y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(err => console.error('Error fetching chart data:', err));
+    </script>
 </body>
 </html>
