@@ -2,6 +2,8 @@
 # We are importing the class and several helpful functions.
 from flask import Flask, request, redirect, url_for, session, render_template, flash, jsonify
 from datetime import timedelta
+# Add this line below:
+from nlp_utils import process_natural_language 
 from db_manager import create_table, insert_expense, view_expenses, delete_expense, total_expense, add_user, check_user, get_username, delete_expense_with_history, view_delete_history
 from db_manager import update_budget_limit, get_budget_limit, get_category_monthly_spend
 import csv
