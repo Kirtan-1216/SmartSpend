@@ -52,6 +52,13 @@ class NlpTests(unittest.TestCase):
         self.assertEqual(parsed["date"], "2026-04-21")
 
 
+    def test_domain_categories(self):
+        self.assertEqual(process_natural_language("Bought tractor for 5000")["category"], "Agriculture")
+        self.assertEqual(process_natural_language("Pooja at temple 100")["category"], "Spiritual & Religious")
+        self.assertEqual(process_natural_language("Bought cricket bat for 1200")["category"], "Sports & Fitness")
+        self.assertEqual(process_natural_language("Bought motor and bearing for 3500")["category"], "Industrial")
+
+
 class AppFlowTests(unittest.TestCase):
     def setUp(self):
         app.config["TESTING"] = True
@@ -63,6 +70,36 @@ class AppFlowTests(unittest.TestCase):
             data={"username": username, "password": password},
             follow_redirects=True,
         )
+
+    def test_user_keyword_learning_and_nlp_prediction(self):
+        self.signup("keyword_user")
+        user_id = db_manager.check_user("keyword_user", "secret123")
+
+        # Initially, custom item "zxcvitem" parses as Miscellaneous
+        parsed_before = process_natural_language("Bought zxcvitem for 500", user_id=user_id)
+        self.assertEqual(parsed_before["category"], "Miscellaneous")
+
+        # User adds an expense with description "zxcvitem" and custom category "Entertainment"
+        self.client.post(
+            "/add",
+            data={
+                "category": "Entertainment",
+                "amount": "500",
+                "tx_type": "expense",
+                "date": "2026-09-23",
+                "description": "Bought zxcvitem for fun",
+            },
+            follow_redirects=True,
+        )
+
+        # Verify keyword was persisted in SQLite user_keywords table
+        kws = db_manager.get_user_keywords(user_id)
+        self.assertIn("zxcvitem", kws)
+        self.assertEqual(kws["zxcvitem"], "Entertainment")
+
+        # Natural language parser now uses the learned keyword for this user
+        parsed_after = process_natural_language("Spent 200 on zxcvitem today", user_id=user_id)
+        self.assertEqual(parsed_after["category"], "Entertainment")
 
     def test_register_login_logout(self):
         response = self.signup("alice")
@@ -224,3 +261,4 @@ class AppFlowTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

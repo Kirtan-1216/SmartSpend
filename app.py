@@ -33,6 +33,7 @@ from db_manager import (
     get_username,
     insert_expense,
     is_unusual_expense,
+    save_user_keyword,
     total_expense,
     update_budget_limit,
     update_expense,
@@ -62,7 +63,7 @@ def _load_or_create_secret_key():
 def create_app():
     application = Flask(__name__)
     application.secret_key = _load_or_create_secret_key()
-    application.permanent_session_lifetime = timedelta(days=30)
+    application.permanent_session_lifetime = timedelta(days=31)
     application.config["SESSION_COOKIE_HTTPONLY"] = True
     application.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     if os.environ.get("SESSION_COOKIE_SECURE", "").lower() in ("1", "true", "yes"):
@@ -83,10 +84,30 @@ VALID_CATEGORIES = [
     "Stationery",
     "Furniture",
     "Education",
+    "Agriculture",
+    "Industrial",
+    "Spiritual & Religious",
+    "Sports & Fitness",
     "Salary",
     "Income",
     "Miscellaneous",
 ]
+
+STOP_WORDS = {
+    "spent", "paid", "bought", "purchase", "purchased", "cost", "on", "at", "a",
+    "the", "for", "in", "to", "of", "and", "is", "my", "rs", "inr", "rupees",
+    "earned", "received", "got", "was", "with", "from", "by", "an", "amount",
+}
+
+
+def learn_user_keywords(user_id, category, description):
+    if not user_id or not category or not description:
+        return
+    words = re.findall(r"[a-zA-Z]{3,}", description.lower())
+    for word in set(words):
+        if word not in STOP_WORDS:
+            save_user_keyword(user_id, word, category)
+
 
 
 def login_required(view_func):
@@ -265,6 +286,7 @@ def add():
         return redirect(url_for("home"))
 
     if insert_expense(session["USER_ID"], category, amount, tx_date, description, tx_type):
+        learn_user_keywords(session["USER_ID"], category, description)
         flash(f"{tx_type.capitalize()} added successfully!", "success")
         after_save_alerts(session["USER_ID"], category, amount, tx_type)
     else:
@@ -280,7 +302,7 @@ def smart_add():
         flash("Please type a sentence such as 'Spent 500 on dinner yesterday'.", "error")
         return redirect(url_for("home"))
 
-    parsed = process_natural_language(smart_text)
+    parsed = process_natural_language(smart_text, user_id=session.get("USER_ID"))
     amount = parse_amount(parsed.get("amount"))
     if amount is None:
         flash("Could not detect a valid amount. Please modify your text.", "error")
@@ -292,6 +314,7 @@ def smart_add():
     description = parsed.get("description") or smart_text
 
     if insert_expense(session["USER_ID"], category, amount, tx_date, description, tx_type):
+        learn_user_keywords(session["USER_ID"], category, description)
         flash(
             f"Smart added {tx_type}: ₹{amount:.2f} for {category} on {tx_date}.",
             "success",
@@ -310,7 +333,7 @@ def api_parse():
         text = ((request.json or {}).get("text") or "").strip()
     else:
         text = (request.form.get("smart_input") or "").strip()
-    return jsonify(process_natural_language(text))
+    return jsonify(process_natural_language(text, user_id=session.get("USER_ID")))
 
 
 @app.route("/history")
@@ -358,11 +381,13 @@ def edit(id):
         if amount is None or not tx_date:
             flash("Please provide a valid amount and date.", "error")
         elif update_expense(id, session["USER_ID"], category, amount, tx_date, description, tx_type):
+            learn_user_keywords(session["USER_ID"], category, description)
             flash("Transaction updated successfully!", "success")
             return redirect(url_for("home"))
         else:
             flash("Failed to update transaction.", "error")
     return render_template("edit.html", record=record, user_name=get_username(session["USER_ID"]))
+
 
 
 @app.route("/api/data")

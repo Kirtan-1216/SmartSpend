@@ -20,8 +20,8 @@ CATEGORY_MAP = {
         "spotify", "youtube", "party",
     ],
     "Health": [
-        "doctor", "medicine", "hospital", "pharmacy", "health", "fitness",
-        "gym", "medical",
+        "doctor", "medicine", "hospital", "pharmacy", "checkup", "test",
+        "tablet", "pharma", "treatment", "health", "fitness", "gym", "medical",
     ],
     "Shopping": [
         "clothes", "cloths", "shoes", "electronics", "shopping", "amazon",
@@ -33,8 +33,25 @@ CATEGORY_MAP = {
     ],
     "Furniture": ["sofa", "bed", "table", "chair", "desk", "furniture", "cabinet"],
     "Education": ["tuition", "fees", "course", "college", "school", "exam"],
+    "Agriculture": [
+        "tractor", "fertilizer", "seeds", "pesticide", "irrigation", "crop",
+        "urea", "farming", "farm", "khatar",
+    ],
+    "Industrial": [
+        "machinery", "tools", "raw material", "factory", "equipment", "hardware",
+        "bearing", "motor", "sheet metal",
+    ],
+    "Spiritual & Religious": [
+        "temple", "pooja", "prasad", "donation", "trust", "incense",
+        "agarbatti", "spiritual", "ashram",
+    ],
+    "Sports & Fitness": [
+        "cricket", "bat", "ball", "gym", "gripper", "badminton", "shoes",
+        "workout", "protein",
+    ],
     "Salary": ["salary", "stipend", "payroll", "wage"],
 }
+
 
 INCOME_KEYWORDS = [
     "earned", "received", "salary", "income", "got paid", "credited",
@@ -140,8 +157,20 @@ def _extract_amount(text):
     return 0.0
 
 
-def _extract_category(text):
+def _extract_category(text, user_id=None):
     lowered = text.lower()
+    if user_id:
+        try:
+            from db_manager import get_user_keywords
+            user_kws = get_user_keywords(user_id)
+            tokens = re.findall(r"[a-zA-Z0-9]+", lowered)
+            for token in tokens:
+                if token in user_kws:
+                    print(f"[SmartSpend] Natural language matched learned keyword '{token}' -> '{user_kws[token]}' for user {user_id}")
+                    return user_kws[token]
+        except Exception as e:
+            print(f"[SmartSpend] Error loading user keywords for NLP lookup: {e}")
+
     for category, keywords in CATEGORY_MAP.items():
         if category.lower() in lowered:
             return category
@@ -160,7 +189,7 @@ def _extract_type(text):
     return "expense"
 
 
-def process_natural_language(text):
+def process_natural_language(text, user_id=None):
     """
     Parse a short English sentence into a transaction.
 
@@ -187,7 +216,7 @@ def process_natural_language(text):
         result["date_from_text"] = True
 
     result["amount"] = _extract_amount(raw)
-    result["category"] = _extract_category(raw)
+    result["category"] = _extract_category(raw, user_id=user_id)
     result["tx_type"] = _extract_type(raw)
 
     if result["tx_type"] == "income" and result["category"] == "Miscellaneous":
@@ -197,3 +226,4 @@ def process_natural_language(text):
             result["category"] = "Income"
 
     return result
+

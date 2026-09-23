@@ -1,11 +1,18 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const flashes = document.querySelectorAll(".flash");
+    const flashes = document.querySelectorAll(".flash-toast, .flash, .alert, .notification");
     flashes.forEach(function (flash) {
         setTimeout(function () {
+            flash.style.transition = "opacity 0.5s ease, transform 0.5s ease";
             flash.style.opacity = "0";
-            flash.style.transition = "opacity 0.4s ease";
-        }, 4000);
+            flash.style.transform = "translateY(-10px)";
+            setTimeout(function () {
+                if (flash.parentNode) {
+                    flash.remove();
+                }
+            }, 500);
+        }, 3000);
     });
+
 
     const pieCanvas = document.getElementById("pieChart");
     const barCanvas = document.getElementById("barChart");

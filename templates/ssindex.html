@@ -12,11 +12,12 @@
         {% if messages %}
             <div class="flash-messages">
                 {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
+                    <div class="flash flash-toast {{ category }}">{{ message }}</div>
                 {% endfor %}
             </div>
         {% endif %}
     {% endwith %}
+
 
     <div class="dashboard-container">
         <div class="navbar">

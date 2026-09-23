@@ -11,7 +11,7 @@
         {% if messages %}
             <div class="flash-messages">
                 {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
+                    <div class="flash flash-toast {{ category }}">{{ message }}</div>
                 {% endfor %}
             </div>
         {% endif %}
@@ -61,5 +61,7 @@
 
         <footer>Viewing history for {{ user_name }}</footer>
     </div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
+
 </html>

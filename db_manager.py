@@ -52,6 +52,17 @@ def create_table():
             FOREIGN KEY (USER_ID) REFERENCES users (id))"""
         )
 
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS user_keywords (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            keyword TEXT NOT NULL,
+            category TEXT NOT NULL,
+            UNIQUE(user_id, keyword),
+            FOREIGN KEY (user_id) REFERENCES users (id))"""
+        )
+
+        _add_column_if_missing(cursor, "users", "created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
         _add_column_if_missing(cursor, "users", "budget_limit", "REAL DEFAULT 0.0")
         _add_column_if_missing(cursor, "users", "savings_goal", "REAL DEFAULT 0.0")
         _add_column_if_missing(cursor, "expenses", "description", "TEXT DEFAULT ''")
@@ -548,3 +559,41 @@ def view_delete_history(user_id):
             return cursor.fetchall()
     except sqlite3.Error:
         return []
+
+
+def save_user_keyword(user_id, keyword, category):
+    kw = (keyword or "").strip().lower()
+    cat = (category or "").strip()
+    if not kw or not cat or not user_id:
+        return False
+    try:
+        with get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                """INSERT INTO user_keywords (user_id, keyword, category)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(user_id, keyword) DO UPDATE SET category = excluded.category""",
+                (user_id, kw, cat),
+            )
+            connection.commit()
+            print(f"[SmartSpend] Learned keyword '{kw}' -> '{cat}' for user {user_id}")
+            return True
+    except sqlite3.Error as e:
+        print(f"[SmartSpend] Error saving keyword: {e}")
+        return False
+
+
+def get_user_keywords(user_id):
+    if not user_id:
+        return {}
+    try:
+        with get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "SELECT keyword, category FROM user_keywords WHERE user_id = ?",
+                (user_id,),
+            )
+            return {row["keyword"]: row["category"] for row in cursor.fetchall()}
+    except sqlite3.Error:
+        return {}
+
