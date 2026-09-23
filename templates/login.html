@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartSpend | Login</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
 </head>
@@ -19,9 +20,10 @@
     <div class="auth-card">
         <h2>Welcome Back</h2>
         <div class="auth-subtitle">Sign in to continue to SmartSpend</div>
-        <form action="/login" method="POST">
-            <input class="auth-box" type="text" name="username" placeholder="Username" required>
-            <input class="auth-box" type="password" name="password" placeholder="Password" required>
+        <form action="{{ url_for('login') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input class="auth-box" type="text" name="username" placeholder="Username" required minlength="3" maxlength="40" autocomplete="username">
+            <input class="auth-box" type="password" name="password" placeholder="Password" required minlength="6" autocomplete="current-password">
             <button type="submit">Sign In</button>
         </form>
         <div class="auth-footer">

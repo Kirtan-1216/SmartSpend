@@ -292,3 +292,232 @@ footer {
     font-size: 14px;
     padding-bottom: 20px;
 }
+
+.welcome {
+    margin: -10px 0 24px 0;
+    color: #94a3b8;
+}
+
+.nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.navbar a.active {
+    background: #4f46e5;
+}
+
+.navbar a.nav-logout {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #ef4444;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.stat-card p {
+    margin: 0 0 8px 0;
+    color: #94a3b8;
+}
+
+.stat-card h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.stat-card.income h1 { color: #4ade80; }
+.stat-card.expense h1 { color: #f87171; }
+.stat-card.balance h1 { color: #93c5fd; }
+
+.summary-card.over-budget {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    box-shadow: 0 15px 35px -10px rgba(239, 68, 68, 0.5) !important;
+}
+
+.budget-bar-wrap {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.budget-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.budget-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.budget-bar-fill {
+    height: 100%;
+    background: #fff;
+    transition: width 0.5s ease;
+}
+
+.charts-card,
+.settings-card {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.charts-card > div,
+.settings-card > div {
+    flex: 1;
+    min-width: 260px;
+}
+
+.insights-card ul,
+.insight-list {
+    margin: 0;
+    padding-left: 18px;
+    color: #cbd5e1;
+    line-height: 1.7;
+}
+
+.hint, .empty-note {
+    color: #94a3b8;
+    font-size: 14px;
+    margin: 0 0 15px 0;
+}
+
+.empty-note {
+    text-align: center;
+    padding: 20px;
+}
+
+.hidden { display: none; }
+
+.stack-form {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+select {
+    flex: 1;
+    min-width: 160px;
+    padding: 14px 20px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background-color: #0f172a;
+    color: #f8fafc;
+    font-family: inherit;
+    font-size: 15px;
+}
+
+label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 13px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    text-transform: capitalize;
+}
+
+.pill.expense {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.pill.income {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+
+.btn-edit,
+.btn-export {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.btn-export {
+    display: inline-block;
+    background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 12px;
+}
+
+button.btn-delete {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: none;
+}
+
+button.btn-delete:hover {
+    background: #ef4444;
+    color: white;
+}
+
+.deleted-at {
+    color: #ef4444;
+    font-size: 0.9rem;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+@media (max-width: 700px) {
+    body { padding: 12px; }
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .navbar a { margin-left: 0; }
+    .summary-card h1, .stat-card h1 { font-size: 2rem; letter-spacing: -1px; }
+    table { font-size: 13px; }
+    th, td { padding: 10px 8px; }
+}

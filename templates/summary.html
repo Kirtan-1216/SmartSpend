@@ -3,24 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartSpend | Summary </title>
+    <title>SmartSpend | Insights</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Your Expenses</h2>
-    <table border="1">
-        <thead>
-            <tr><th>Category</th><th>Amount</th><th>Date</th></tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
-            <tr>
-                <td>{{ row[1] }}</td>
-                <td>${{ row[2] }}</td>
-                <td>{{ row[3] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <h3>Total: ${{ total_val }}</h3>
+    <div class="dashboard-container">
+        <div class="navbar">
+            <h2>Insights</h2>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}">Dashboard</a>
+                <a href="{{ url_for('summary') }}" class="active">Insights</a>
+                <a href="{{ url_for('history') }}">History</a>
+                <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
+            </div>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-card income">
+                <p>All-time income</p>
+                <h1>₹{{ "%.2f"|format(insights.all_income) }}</h1>
+            </div>
+            <div class="stat-card expense">
+                <p>All-time expenses</p>
+                <h1>₹{{ "%.2f"|format(insights.all_expense) }}</h1>
+            </div>
+            <div class="stat-card balance">
+                <p>All-time balance</p>
+                <h1>₹{{ "%.2f"|format(insights.balance) }}</h1>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Month {{ insights.month }}</h2>
+            <ul class="insight-list">
+                <li>Income: ₹{{ "%.2f"|format(insights.month_income) }}</li>
+                <li>Expenses: ₹{{ "%.2f"|format(insights.month_expense) }}</li>
+                <li>Net: ₹{{ "%.2f"|format(insights.month_balance) }}</li>
+                {% if insights.budget > 0 %}
+                    <li>Budget: ₹{{ "%.2f"|format(insights.budget) }}</li>
+                {% endif %}
+                {% if insights.savings_goal > 0 %}
+                    <li>Savings goal: ₹{{ "%.2f"|format(insights.savings_goal) }}</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>Category-wise spending this month</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category, amount in insights.categories %}
+                    <tr>
+                        <td><strong>{{ category }}</strong></td>
+                        <td>₹{{ "%.2f"|format(amount) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not insights.categories %}
+                <p class="empty-note">No expenses recorded this month.</p>
+            {% endif %}
+        </div>
+
+        <div class="card insights-card">
+            <h2>What this data means</h2>
+            <ul>
+                {% for message in insights.messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <footer>Viewing insights for {{ user_name }}</footer>
+    </div>
 </body>
 </html>

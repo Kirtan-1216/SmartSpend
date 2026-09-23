@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartSpend | Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -19,176 +20,167 @@
 
     <div class="dashboard-container">
         <div class="navbar">
-            <h2>👋 Welcome, {{ user_name }}!</h2>
-            <div>
-                <a href="{{ url_for('history') }}">Delete History</a>
-                <a href="{{ url_for('logout') }}" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #ef4444;">Logout</a>
+            <h2>SmartSpend</h2>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}" class="active">Dashboard</a>
+                <a href="{{ url_for('summary') }}">Insights</a>
+                <a href="{{ url_for('history') }}">History</a>
+                <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
             </div>
         </div>
-        
-        <style>
-            .summary-card.over-budget {
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-                box-shadow: 0 15px 35px -10px rgba(239, 68, 68, 0.5) !important;
-            }
-        </style>
 
-        {% if budget and budget > 0 %}
-            {% set perc = (total_val / budget) * 100 %}
-            {% if perc > 100 %}
-                {% set perc = 100 %}
-            {% endif %}
-            <div class="summary-card {% if total_val > budget %}over-budget{% endif %}">
-                <p>Total Balance Spent</p>
-                <h1>₹{{ "%.2f"|format(total_val) }}</h1>
-                <span>Budget Limit: ₹{{ "%.2f"|format(budget) }}</span>
-                
-                <div style="margin-top: 20px; text-align: left;">
-                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px;">
-                        <span>Budget Usage</span>
-                        <span>{{ "%.1f"|format((total_val/budget)*100) }}%</span>
+        <p class="welcome">Welcome, <strong>{{ user_name }}</strong></p>
+
+        <div class="stat-grid">
+            <div class="stat-card income">
+                <p>This month income</p>
+                <h1>₹{{ "%.2f"|format(insights.month_income) }}</h1>
+            </div>
+            <div class="stat-card expense">
+                <p>This month expenses</p>
+                <h1>₹{{ "%.2f"|format(insights.month_expense) }}</h1>
+            </div>
+            <div class="stat-card balance">
+                <p>This month balance</p>
+                <h1>₹{{ "%.2f"|format(insights.month_balance) }}</h1>
+            </div>
+        </div>
+
+        {% if insights.budget and insights.budget > 0 %}
+            {% set perc = (insights.month_expense / insights.budget) * 100 %}
+            {% if perc > 100 %}{% set perc = 100 %}{% endif %}
+            <div class="summary-card {% if insights.month_expense > insights.budget %}over-budget{% endif %}">
+                <p>Monthly budget usage</p>
+                <h1>₹{{ "%.2f"|format(insights.month_expense) }} / ₹{{ "%.2f"|format(insights.budget) }}</h1>
+                <div class="budget-bar-wrap">
+                    <div class="budget-bar-label">
+                        <span>Used</span>
+                        <span>{{ "%.1f"|format((insights.month_expense / insights.budget) * 100) }}%</span>
                     </div>
-                    <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                        <div style="width: {{ perc }}%; height: 100%; background: #fff; transition: width 0.5s ease;"></div>
+                    <div class="budget-bar">
+                        <div class="budget-bar-fill" style="width: {{ perc }}%;"></div>
                     </div>
                 </div>
             </div>
-        {% else %}
-            <div class="summary-card">
-                <p>Total Balance Spent</p>
-                <h1>₹{{ "%.2f"|format(total_val) }}</h1>
-                <span>INR - Indian Rupee</span>
-            </div>
         {% endif %}
 
-        <div class="card" style="display: flex; gap: 20px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 300px;">
+        <div class="card insights-card">
+            <h2>Spending insights</h2>
+            <ul>
+                {% for message in insights.messages %}
+                    <li>{{ message }}</li>
+                {% else %}
+                    <li>Add a few transactions to see insights.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="card charts-card">
+            <div>
                 <canvas id="pieChart"></canvas>
+                <p id="pieEmpty" class="empty-note hidden">No expense categories to chart yet.</p>
             </div>
-            <div style="flex: 1; min-width: 300px;">
+            <div>
                 <canvas id="barChart"></canvas>
+                <p id="barEmpty" class="empty-note hidden">No spending in the last 7 days.</p>
             </div>
         </div>
 
         <div class="card">
-            <h2>Add New Expense</h2>
-            <form action="/add" method="POST">
-                <input type="text" name="category" placeholder="Category (e.g. Food)" required>
-                <input type="number" step="0.01" name="amount" placeholder="Amount" required>
-                <button type="submit">Add Expense</button>
+            <h2>Add transaction</h2>
+            <form action="{{ url_for('add') }}" method="POST" class="stack-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <select name="tx_type" required>
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                </select>
+                <input type="text" name="category" list="category-list" placeholder="Category (e.g. Food)" required>
+                <datalist id="category-list">
+                    {% for cat in valid_categories %}
+                        <option value="{{ cat }}"></option>
+                    {% endfor %}
+                </datalist>
+                <input type="number" step="0.01" min="0.01" name="amount" placeholder="Amount" required>
+                <input type="date" name="date" value="{{ today }}">
+                <input type="text" name="description" placeholder="Description (optional)">
+                <button type="submit">Add</button>
             </form>
         </div>
 
         <div class="card">
-            <h2>Smart Add Expense</h2>
-            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 15px; margin-top: -10px;">Type naturally! e.g., "Spent 500 on Pizza" or "Petrol 1200"</p>
-            <form action="/smart_add" method="POST">
-                <input type="text" name="smart_input" placeholder="Enter your expense description" required>
+            <h2>Smart add</h2>
+            <p class="hint">Type naturally, for example: "Spent ₹500 on dinner yesterday" or "Received salary 25000".</p>
+            <form action="{{ url_for('smart_add') }}" method="POST" class="stack-form" id="smart-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="text" name="smart_input" id="smart_input" placeholder="Enter your expense or income in plain English" required>
                 <button type="submit">Smart Add</button>
             </form>
+            <p id="smart-preview" class="hint"></p>
         </div>
 
         <div class="card">
-            <h2>Recent Transactions</h2>
+            <h2>Recent transactions</h2>
+            <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
+                        <th>Type</th>
                         <th>Category</th>
                         <th>Amount</th>
                         <th>Date</th>
+                        <th>Description</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in expenses %}
                     <tr>
-                        <td><strong>{{ row[2] }}</strong></td> 
-                        <td>₹{{ "%.2f"|format(row[3]) }}</td> 
-                        <td>{{ row[4] }}</td>
-                        <td><a href="{{ url_for('delete', id=row[0]) }}" class="btn-delete">Delete</a></td>
+                        <td><span class="pill {{ row['tx_type'] }}">{{ row['tx_type'] }}</span></td>
+                        <td><strong>{{ row['CATEGORY'] }}</strong></td>
+                        <td>₹{{ "%.2f"|format(row['AMOUNT']) }}</td>
+                        <td>{{ row['DATE'] }}</td>
+                        <td>{{ row['description'] }}</td>
+                        <td class="actions">
+                            <a href="{{ url_for('edit', id=row['id']) }}" class="btn-edit">Edit</a>
+                            <form action="{{ url_for('delete', id=row['id']) }}" method="POST" class="inline-form" onsubmit="return confirm('Delete this transaction?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="btn-delete">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
             {% if not expenses %}
-                <p style="text-align: center; color: #94a3b8; padding: 20px;">No expenses found. Add your first one above!</p>
+                <p class="empty-note">No transactions yet. Add your first income or expense above.</p>
             {% endif %}
         </div>
 
-        <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 300px; margin-bottom: 20px;">
-                <h2>⚙️ User Settings</h2>
-                <form action="/settings" method="POST" style="margin-bottom: 10px;">
-                    <input type="number" step="0.01" name="budget_limit" placeholder="Overall Monthly Budget" value="{{ budget }}" required>
-                    <button type="submit">Save Budget</button>
+        <div class="card settings-card">
+            <div>
+                <h2>Settings</h2>
+                <form action="{{ url_for('settings') }}" method="POST" class="stack-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <label>Monthly expense budget
+                        <input type="number" step="0.01" min="0" name="budget_limit" placeholder="0 disables warnings" value="{{ insights.budget }}">
+                    </label>
+                    <label>Monthly savings goal
+                        <input type="number" step="0.01" min="0" name="savings_goal" placeholder="0 disables goal" value="{{ insights.savings_goal }}">
+                    </label>
+                    <button type="submit">Save settings</button>
                 </form>
-                <p style="color: #94a3b8; font-size: 13px; margin: 0;">If > 0, you'll be visually warned when your total spending exceeds this limit.</p>
             </div>
-            <div style="flex: 1; min-width: 300px; text-align: right;">
-                <h2>📊 Data Export</h2>
-                <a href="{{ url_for('export_csv') }}" style="display: inline-block; background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: 600; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3);">Download CSV</a>
+            <div>
+                <h2>Export</h2>
+                <a href="{{ url_for('export_csv') }}" class="btn-export">Download CSV</a>
+                <p class="hint">All-time totals: income ₹{{ "%.2f"|format(insights.all_income) }}, expenses ₹{{ "%.2f"|format(insights.all_expense) }}, balance ₹{{ "%.2f"|format(insights.balance) }}.</p>
             </div>
         </div>
 
-        <footer>
-            Logged in as User #{{ session['USER_ID'] }}
-        </footer>
+        <footer>Logged in as {{ user_name }}</footer>
     </div>
-    
-    <script>
-        fetch('/api/data')
-            .then(response => response.json())
-            .then(data => {
-                const pieCtx = document.getElementById('pieChart').getContext('2d');
-                const barCtx = document.getElementById('barChart').getContext('2d');
 
-                if (data.categories && Object.keys(data.categories).length > 0) {
-                    new Chart(pieCtx, {
-                        type: 'pie',
-                        data: {
-                            labels: Object.keys(data.categories),
-                            datasets: [{
-                                data: Object.values(data.categories),
-                                backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1']
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: { position: 'bottom', labels: { color: '#f8fafc' } },
-                                title: { display: true, text: 'Spending by Category', color: '#f8fafc' }
-                            }
-                        }
-                    });
-                }
-
-                if (data.days && Object.keys(data.days).length > 0) {
-                    new Chart(barCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: Object.keys(data.days),
-                            datasets: [{
-                                label: 'Daily Spending',
-                                data: Object.values(data.days),
-                                backgroundColor: '#4f46e5',
-                                borderRadius: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: { display: false },
-                                title: { display: true, text: 'Last 7 Days Spending', color: '#f8fafc' }
-                            },
-                            scales: {
-                                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                                y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-                            }
-                        }
-                    });
-                }
-            })
-            .catch(err => console.error('Error fetching chart data:', err));
-    </script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

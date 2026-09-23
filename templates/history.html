@@ -2,49 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartSpend | History</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <div class="dashboard-container">
         <div class="navbar">
-            <h2>📜 Deletion History</h2>
-            <div>
-                <a href="{{ url_for('home') }}" style="background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.5); color: #38bdf8;">Back to Home</a>
-                <a href="{{ url_for('logout') }}" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #ef4444;">Logout</a>
+            <h2>Deletion History</h2>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}">Dashboard</a>
+                <a href="{{ url_for('summary') }}">Insights</a>
+                <a href="{{ url_for('history') }}" class="active">History</a>
+                <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
             </div>
         </div>
 
         <div class="card">
-            <h2>Deleted Transactions</h2>
+            <h2>Deleted transactions</h2>
             <table>
                 <thead>
                     <tr>
+                        <th>Type</th>
                         <th>Category</th>
-                        <th>Original Amount</th>
-                        <th>Original Date</th>
-                        <th>Time of Deletion</th>
+                        <th>Amount</th>
+                        <th>Original date</th>
+                        <th>Deleted at</th>
+                        <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in history %}
                     <tr>
-                        <td><strong>{{ row[0] }}</strong></td>
-                        <td>₹{{ "%.2f"|format(row[1]) }}</td>
-                        <td>{{ row[2] }}</td>
-                        <td style="color: #ef4444; font-size: 0.9rem;">{{ row[3] }}</td>
+                        <td><span class="pill {{ row['tx_type'] }}">{{ row['tx_type'] }}</span></td>
+                        <td><strong>{{ row['CATEGORY'] }}</strong></td>
+                        <td>₹{{ "%.2f"|format(row['AMOUNT']) }}</td>
+                        <td>{{ row['EXPENSE_DATE'] }}</td>
+                        <td class="deleted-at">{{ row['DELETED_AT'] }}</td>
+                        <td>{{ row['description'] }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% if not history %}
-                <p style="text-align: center; color: #94a3b8; padding: 20px;">No deleted records found.</p>
+                <p class="empty-note">No deleted records found.</p>
             {% endif %}
         </div>
-        
-        <footer>
-            Viewing History for {{ user_name }}
-        </footer>
+
+        <footer>Viewing history for {{ user_name }}</footer>
     </div>
 </body>
 </html>
