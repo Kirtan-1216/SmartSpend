@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartSpend | Sign Up</title>
+    <title>SmartSpend | Create Account</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
 </head>
 <body>
@@ -11,26 +11,41 @@
         {% if messages %}
             <div class="flash-messages">
                 {% for category, message in messages %}
-                    <div class="flash flash-toast {{ category }}">{{ message }}</div>
+                    <div class="flash {{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="flash-close" onclick="this.parentElement.remove();">&times;</button>
+                    </div>
                 {% endfor %}
             </div>
         {% endif %}
     {% endwith %}
 
-    <div class="auth-card">
-        <h2>Create Account</h2>
-        <div class="auth-subtitle">Join SmartSpend to track your finances</div>
-        <form action="{{ url_for('signup') }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input type="text" name="username" placeholder="Choose Username" required minlength="3" maxlength="40" autocomplete="username">
-            <input type="password" name="password" placeholder="Choose Password (min 6 characters)" required minlength="6" maxlength="128" autocomplete="new-password">
-            <button type="submit">Register Now</button>
-        </form>
-        <div class="auth-footer">
-            Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+    <div class="auth-wrapper">
+        <div class="auth-brand-logo">
+            <div class="auth-logo-icon">₹</div>
+            <h1>SmartSpend</h1>
+        </div>
+
+        <div class="auth-card">
+            <h2>Get Started</h2>
+            <div class="auth-subtitle">Create your personal SmartSpend account</div>
+            <form action="{{ url_for('signup') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div>
+                    <label class="input-label" for="username">Username</label>
+                    <input id="username" type="text" name="username" placeholder="Choose a username (3-40 chars)" required minlength="3" maxlength="40" autocomplete="username" autofocus>
+                </div>
+                <div>
+                    <label class="input-label" for="password">Password</label>
+                    <input id="password" type="password" name="password" placeholder="Create password (min 6 characters)" required minlength="6" maxlength="128" autocomplete="new-password">
+                </div>
+                <button type="submit">Create Free Account</button>
+            </form>
+            <div class="auth-footer">
+                Already have an account? <a href="{{ url_for('login') }}">Sign In</a>
+            </div>
         </div>
     </div>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
-
 </html>

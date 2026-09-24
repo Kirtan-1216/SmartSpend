@@ -3,84 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartSpend | Insights</title>
+    <title>SmartSpend | Financial Copilot Insights</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="dashboard-container">
-        <div class="navbar">
-            <h2>Insights</h2>
-            <div class="nav-links">
+        <!-- Top Navigation -->
+        <header class="navbar">
+            <div class="nav-brand">
+                <div class="nav-logo-icon">₹</div>
+                <div>
+                    <h2>SmartSpend</h2>
+                </div>
+                <span class="brand-badge">Intelligence</span>
+            </div>
+            <nav class="nav-links">
                 <a href="{{ url_for('home') }}">Dashboard</a>
-                <a href="{{ url_for('summary') }}" class="active">Insights</a>
+                <a href="{{ url_for('summary') }}" class="active">Copilot Insights</a>
                 <a href="{{ url_for('history') }}">History</a>
                 <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
-            </div>
-        </div>
+            </nav>
+        </header>
 
-        <div class="stat-grid">
+        <!-- Command Header & Financial Health Snapshot -->
+        <section class="command-header">
+            <div class="greeting-block">
+                <h1>Financial Copilot Insights 🧠</h1>
+                <p>In-depth analytical breakdown for {{ user_name }} &middot; Month {{ insights.month }}</p>
+            </div>
+            <div class="health-snapshot-pill">
+                <div class="health-score-dial {{ insights.health_status_class }}">
+                    {{ insights.health_score }}
+                </div>
+                <div class="health-details">
+                    <div class="health-title">Health Score</div>
+                    <div class="health-grade">{{ insights.health_grade }}</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- All-time KPI Grid -->
+        <section class="stat-grid">
             <div class="stat-card income">
-                <p>All-time income</p>
-                <h1>₹{{ "%.2f"|format(insights.all_income) }}</h1>
+                <div class="stat-card-header">
+                    <span class="stat-card-title">All-Time Income</span>
+                    <div class="stat-card-icon">↑</div>
+                </div>
+                <h1 data-counter="{{ insights.all_income }}">₹{{ "%.2f"|format(insights.all_income) }}</h1>
+                <div class="stat-card-subtext">Cumulative recorded earnings</div>
             </div>
+
             <div class="stat-card expense">
-                <p>All-time expenses</p>
-                <h1>₹{{ "%.2f"|format(insights.all_expense) }}</h1>
+                <div class="stat-card-header">
+                    <span class="stat-card-title">All-Time Expenses</span>
+                    <div class="stat-card-icon">↓</div>
+                </div>
+                <h1 data-counter="{{ insights.all_expense }}">₹{{ "%.2f"|format(insights.all_expense) }}</h1>
+                <div class="stat-card-subtext">Cumulative spending</div>
             </div>
+
             <div class="stat-card balance">
-                <p>All-time balance</p>
-                <h1>₹{{ "%.2f"|format(insights.balance) }}</h1>
+                <div class="stat-card-header">
+                    <span class="stat-card-title">Net Net Worth</span>
+                    <div class="stat-card-icon">💰</div>
+                </div>
+                <h1 data-counter="{{ insights.balance }}">₹{{ "%.2f"|format(insights.balance) }}</h1>
+                <div class="stat-card-subtext">Overall cumulative balance</div>
             </div>
-        </div>
 
-        <div class="card">
-            <h2>Month {{ insights.month }}</h2>
-            <ul class="insight-list">
-                <li>Income: ₹{{ "%.2f"|format(insights.month_income) }}</li>
-                <li>Expenses: ₹{{ "%.2f"|format(insights.month_expense) }}</li>
-                <li>Net: ₹{{ "%.2f"|format(insights.month_balance) }}</li>
-                {% if insights.budget > 0 %}
-                    <li>Budget: ₹{{ "%.2f"|format(insights.budget) }}</li>
-                {% endif %}
-                {% if insights.savings_goal > 0 %}
-                    <li>Savings goal: ₹{{ "%.2f"|format(insights.savings_goal) }}</li>
-                {% endif %}
-            </ul>
-        </div>
+            <div class="stat-card budget">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">Daily Spending Pace</span>
+                    <div class="stat-card-icon">⚡</div>
+                </div>
+                <h1 data-counter="{{ insights.daily_average }}">₹{{ "%.2f"|format(insights.daily_average) }}</h1>
+                <div class="stat-card-subtext">Current month daily average</div>
+            </div>
+        </section>
 
-        <div class="card">
-            <h2>Category-wise spending this month</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Category</th>
-                        <th>Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for category, amount in insights.categories %}
-                    <tr>
-                        <td><strong>{{ category }}</strong></td>
-                        <td>₹{{ "%.2f"|format(amount) }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <!-- Current Month Health Snapshot & Pillar Breakdown -->
+        <section class="intelligence-grid">
+            <div class="card">
+                <h2>Health Score Methodology</h2>
+                <p style="color: var(--text-secondary); font-size: 13.5px; margin-bottom: 14px;">
+                    SmartSpend uses an explainable 4-pillar financial index:
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px;">
+                        <span>1. Cash Flow Ratio (25 pts):</span>
+                        <strong style="color: {% if insights.month_balance > 0 %}#34d399{% else %}#f87171{% endif %};">
+                            {% if insights.month_balance > 0 %}Positive (+25){% else %}Deficit (0){% endif %}
+                        </strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px;">
+                        <span>2. Savings Rate (35 pts):</span>
+                        <strong style="color: #38bdf8;">{{ "%.0f"|format(insights.savings_rate) }}% of income</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px;">
+                        <span>3. Budget Discipline (25 pts):</span>
+                        <strong style="color: #c084fc;">
+                            {% if insights.budget > 0 %}
+                                {{ "%.0f"|format(insights.budget_used_percent) }}% used
+                            {% else %}
+                                15 pts (Baseline)
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding-bottom: 4px;">
+                        <span>4. Tracking Consistency (15 pts):</span>
+                        <strong style="color: #a5b4fc;">{{ insights.tx_count }} transactions this month</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Copilot Suggestions -->
+            <div class="card">
+                <h2>Actionable Saving Opportunities</h2>
+                {% for sug in insights.suggestions %}
+                    <div class="suggestion-card-item">
+                        <div class="suggestion-content">
+                            <div class="sug-title">{{ sug.title }}</div>
+                            <div class="sug-desc">{{ sug.message }}</div>
+                        </div>
+                        <div class="suggestion-impact-pill">{{ sug.impact }}</div>
+                    </div>
+                {% else %}
+                    <div class="empty-state" style="padding: 20px 0;">
+                        <p>No optimization suggestions yet. Keep tracking transactions!</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Category Wise Spending Breakdown -->
+        <section class="card">
+            <h2>Category-Wise Spending Breakdown</h2>
+            <div class="tx-table-container">
+                <table class="tx-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Amount Spent</th>
+                            <th>Share of Spending</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category, amount in insights.categories %}
+                        {% set share = (amount / insights.month_expense * 100) if insights.month_expense > 0 else 0 %}
+                        <tr>
+                            <td><strong>{{ category }}</strong></td>
+                            <td style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">₹{{ "%.2f"|format(amount) }}</td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; max-width: 150px;">
+                                        <div style="height: 100%; width: {{ share }}%; background: #6366f1;"></div>
+                                    </div>
+                                    <span style="font-size: 12px; color: var(--text-muted);">{{ "%.1f"|format(share) }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
             {% if not insights.categories %}
-                <p class="empty-note">No expenses recorded this month.</p>
+                <div class="empty-state">
+                    <p>No expenses recorded this month.</p>
+                </div>
             {% endif %}
-        </div>
+        </section>
 
-        <div class="card insights-card">
-            <h2>What this data means</h2>
-            <ul>
+        <!-- Natural Language Summaries -->
+        <section class="card">
+            <h2>Explainable Data Insights</h2>
+            <ul style="padding-left: 20px; line-height: 1.8; color: #cbd5e1; font-size: 14px;">
                 {% for message in insights.messages %}
                     <li>{{ message }}</li>
                 {% endfor %}
             </ul>
-        </div>
+        </section>
 
-        <footer>Viewing insights for {{ user_name }}</footer>
+        <!-- Footer -->
+        <footer>
+            <div>Viewing Copilot Insights for {{ user_name }}</div>
+        </footer>
     </div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

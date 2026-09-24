@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartSpend | Dashboard</title>
+    <title>SmartSpend | Financial Command Center</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -12,174 +12,395 @@
         {% if messages %}
             <div class="flash-messages">
                 {% for category, message in messages %}
-                    <div class="flash flash-toast {{ category }}">{{ message }}</div>
+                    <div class="flash {{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="flash-close">&times;</button>
+                    </div>
                 {% endfor %}
             </div>
         {% endif %}
     {% endwith %}
 
-
     <div class="dashboard-container">
-        <div class="navbar">
-            <h2>SmartSpend</h2>
-            <div class="nav-links">
+        <!-- Top Navigation Bar -->
+        <header class="navbar">
+            <div class="nav-brand">
+                <div class="nav-logo-icon">₹</div>
+                <div>
+                    <h2>SmartSpend</h2>
+                </div>
+                <span class="brand-badge">Copilot</span>
+            </div>
+            <nav class="nav-links">
                 <a href="{{ url_for('home') }}" class="active">Dashboard</a>
-                <a href="{{ url_for('summary') }}">Insights</a>
+                <a href="{{ url_for('summary') }}">Copilot Insights</a>
                 <a href="{{ url_for('history') }}">History</a>
                 <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
+            </nav>
+        </header>
+
+        <!-- Command Header & Financial Health Snapshot -->
+        <section class="command-header">
+            <div class="greeting-block">
+                <h1>Welcome, {{ user_name }} 👋</h1>
+                <p>Financial Command Center &middot; Month {{ insights.month }}</p>
             </div>
-        </div>
+            <div class="health-snapshot-pill">
+                <div class="health-score-dial {{ insights.health_status_class }}">
+                    {{ insights.health_score }}
+                </div>
+                <div class="health-details">
+                    <div class="health-title">Financial Health</div>
+                    <div class="health-grade">{{ insights.health_grade }}</div>
+                </div>
+            </div>
+        </section>
 
-        <p class="welcome">Welcome, <strong>{{ user_name }}</strong></p>
+        <!-- Financial Copilot Natural Language Command Bar -->
+        <section class="copilot-command-card">
+            <div class="copilot-header">
+                <div class="copilot-title-group">
+                    <div class="copilot-icon">⚡</div>
+                    <h3>Smart Financial Copilot</h3>
+                    <span class="copilot-badge">AI Natural Language</span>
+                </div>
+            </div>
+            <form action="{{ url_for('smart_add') }}" method="POST" class="copilot-form" id="smart-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="copilot-input-wrap">
+                    <input type="text" name="smart_input" id="smart_input" class="copilot-input"
+                           placeholder="Tell SmartSpend what happened... (e.g. 'Spent ₹450 on dinner yesterday' or 'Received salary 30k')"
+                           autocomplete="off" required>
+                </div>
+                <button type="submit" class="copilot-btn">
+                    <span>⚡ Smart Add</span>
+                </button>
+            </form>
 
-        <div class="stat-grid">
+            <!-- Live Parsing Preview Chip -->
+            <div id="smart-preview-container" class="copilot-preview-container hidden">
+                <span id="smart-preview-chip"></span>
+            </div>
+
+            <!-- Quick Suggestion Pills -->
+            <div class="copilot-suggestions">
+                <span class="suggestion-label">Try asking:</span>
+                <span class="copilot-suggestion-pill" data-prompt="Spent ₹500 on dinner yesterday">"Spent ₹500 on dinner yesterday"</span>
+                <span class="copilot-suggestion-pill" data-prompt="Paid 120 for Uber today">"Paid 120 for Uber today"</span>
+                <span class="copilot-suggestion-pill" data-prompt="Bought groceries for 1,200 rupees">"Bought groceries for 1,200 rupees"</span>
+                <span class="copilot-suggestion-pill" data-prompt="Received salary 25000">"Received salary 25000"</span>
+                <span class="copilot-suggestion-pill" data-prompt="Spent 2.5k on shopping">"Spent 2.5k on shopping"</span>
+            </div>
+        </section>
+
+        <!-- KPI Statistics 4-Card Grid -->
+        <section class="stat-grid">
+            <!-- Monthly Income -->
             <div class="stat-card income">
-                <p>This month income</p>
-                <h1>₹{{ "%.2f"|format(insights.month_income) }}</h1>
+                <div class="stat-card-header">
+                    <span class="stat-card-title">This Month Income</span>
+                    <div class="stat-card-icon">↑</div>
+                </div>
+                <h1 data-counter="{{ insights.month_income }}">₹{{ "%.2f"|format(insights.month_income) }}</h1>
+                <div class="stat-card-subtext">
+                    <span>All-time: ₹{{ "%.2f"|format(insights.all_income) }}</span>
+                </div>
             </div>
-            <div class="stat-card expense">
-                <p>This month expenses</p>
-                <h1>₹{{ "%.2f"|format(insights.month_expense) }}</h1>
-            </div>
-            <div class="stat-card balance">
-                <p>This month balance</p>
-                <h1>₹{{ "%.2f"|format(insights.month_balance) }}</h1>
-            </div>
-        </div>
 
-        {% if insights.budget and insights.budget > 0 %}
-            {% set perc = (insights.month_expense / insights.budget) * 100 %}
-            {% if perc > 100 %}{% set perc = 100 %}{% endif %}
-            <div class="summary-card {% if insights.month_expense > insights.budget %}over-budget{% endif %}">
-                <p>Monthly budget usage</p>
-                <h1>₹{{ "%.2f"|format(insights.month_expense) }} / ₹{{ "%.2f"|format(insights.budget) }}</h1>
-                <div class="budget-bar-wrap">
-                    <div class="budget-bar-label">
-                        <span>Used</span>
-                        <span>{{ "%.1f"|format((insights.month_expense / insights.budget) * 100) }}%</span>
+            <!-- Monthly Expenses -->
+            <div class="stat-card expense">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">This Month Expenses</span>
+                    <div class="stat-card-icon">↓</div>
+                </div>
+                <h1 data-counter="{{ insights.month_expense }}">₹{{ "%.2f"|format(insights.month_expense) }}</h1>
+                <div class="stat-card-subtext">
+                    <span>Avg ₹{{ "%.2f"|format(insights.daily_average) }}/day</span>
+                    {% if insights.mom_change_percent is not none %}
+                        {% if insights.mom_change_percent > 0 %}
+                            <span class="stat-badge negative">+{{ insights.mom_change_percent }}% MoM</span>
+                        {% else %}
+                            <span class="stat-badge positive">{{ insights.mom_change_percent }}% MoM</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Net Balance / Savings -->
+            <div class="stat-card balance">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">Net Month Savings</span>
+                    <div class="stat-card-icon">💰</div>
+                </div>
+                <h1 data-counter="{{ insights.month_balance }}">₹{{ "%.2f"|format(insights.month_balance) }}</h1>
+                <div class="stat-card-subtext">
+                    {% if insights.month_income > 0 %}
+                        <span class="stat-badge positive">{{ "%.0f"|format(insights.savings_rate) }}% save rate</span>
+                    {% else %}
+                        <span>Total Balance: ₹{{ "%.2f"|format(insights.balance) }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Monthly Budget -->
+            <div class="stat-card budget">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">Monthly Budget</span>
+                    <div class="stat-card-icon">🎯</div>
+                </div>
+                {% if insights.budget > 0 %}
+                    <h1>{{ "%.0f"|format(insights.budget_used_percent) }}%</h1>
+                    <div class="stat-card-subtext">
+                        <span>₹{{ "%.2f"|format(insights.budget_remaining) }} left of ₹{{ "%.2f"|format(insights.budget) }}</span>
                     </div>
-                    <div class="budget-bar">
-                        <div class="budget-bar-fill" style="width: {{ perc }}%;"></div>
+                    <div class="card-progress-bar">
+                        {% set bar_w = insights.budget_used_percent if insights.budget_used_percent <= 100 else 100 %}
+                        <div class="card-progress-fill {% if insights.month_expense > insights.budget %}over-budget{% endif %}" style="width: {{ bar_w }}%;"></div>
+                    </div>
+                {% else %}
+                    <h1 style="font-size: 1.3rem; color: #94a3b8; padding-top: 6px;">No Budget Set</h1>
+                    <div class="stat-card-subtext">
+                        <span>Set below to unlock alerts</span>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Copilot Alerts & Actionable Suggestions -->
+        {% if insights.smart_alerts or insights.suggestions %}
+        <section class="intelligence-grid">
+            <!-- Smart Alerts -->
+            <div class="card">
+                <h2>⚡ Financial Alerts</h2>
+                {% for alert in insights.smart_alerts %}
+                    <div class="smart-alert-item {{ alert.type }}">
+                        <div>
+                            <div class="smart-alert-title">{{ alert.title }}</div>
+                            <div>{{ alert.message }}</div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="empty-state" style="padding: 20px 0;">
+                        <p>✓ All financial telemetry normal. No alerts triggered.</p>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Actionable Saving Suggestions -->
+            <div class="card">
+                <h2>💡 Copilot Saving Suggestions</h2>
+                {% for sug in insights.suggestions %}
+                    <div class="suggestion-card-item">
+                        <div class="suggestion-content">
+                            <div class="sug-title">{{ sug.title }}</div>
+                            <div class="sug-desc">{{ sug.message }}</div>
+                        </div>
+                        <div class="suggestion-impact-pill">{{ sug.impact }}</div>
+                    </div>
+                {% else %}
+                    <div class="empty-state" style="padding: 20px 0;">
+                        <p>Add more expenses to unlock personalized AI savings suggestions.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Charts Grid (Category Breakdown & 7-Day Trend) -->
+        <section class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h2>Spending by Category</h2>
+                    <span class="chart-header-sub">Distribution</span>
+                </div>
+                <div class="chart-container-inner">
+                    <canvas id="pieChart"></canvas>
+                    <div id="pieEmpty" class="empty-state hidden">
+                        <div class="empty-state-icon">📊</div>
+                        <h3>No Expense Categories Yet</h3>
+                        <p>Add your first expense above to see category distribution.</p>
                     </div>
                 </div>
             </div>
-        {% endif %}
 
-        <div class="card insights-card">
-            <h2>Spending insights</h2>
-            <ul>
-                {% for message in insights.messages %}
-                    <li>{{ message }}</li>
-                {% else %}
-                    <li>Add a few transactions to see insights.</li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <div class="card charts-card">
-            <div>
-                <canvas id="pieChart"></canvas>
-                <p id="pieEmpty" class="empty-note hidden">No expense categories to chart yet.</p>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h2>Recent Spending Trend</h2>
+                    <span class="chart-header-sub">Last 7 Days</span>
+                </div>
+                <div class="chart-container-inner">
+                    <canvas id="barChart"></canvas>
+                    <div id="barEmpty" class="empty-state hidden">
+                        <div class="empty-state-icon">📈</div>
+                        <h3>No Activity in Last 7 Days</h3>
+                        <p>Expenses recorded in the past week will appear here.</p>
+                    </div>
+                </div>
             </div>
-            <div>
-                <canvas id="barChart"></canvas>
-                <p id="barEmpty" class="empty-note hidden">No spending in the last 7 days.</p>
-            </div>
-        </div>
+        </section>
 
-        <div class="card">
-            <h2>Add transaction</h2>
-            <form action="{{ url_for('add') }}" method="POST" class="stack-form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <select name="tx_type" required>
-                    <option value="expense">Expense</option>
-                    <option value="income">Income</option>
-                </select>
-                <input type="text" name="category" list="category-list" placeholder="Category (e.g. Food)" required>
-                <datalist id="category-list">
-                    {% for cat in valid_categories %}
-                        <option value="{{ cat }}"></option>
-                    {% endfor %}
-                </datalist>
-                <input type="number" step="0.01" min="0.01" name="amount" placeholder="Amount" required>
-                <input type="date" name="date" value="{{ today }}">
-                <input type="text" name="description" placeholder="Description (optional)">
-                <button type="submit">Add</button>
-            </form>
-        </div>
-
-        <div class="card">
-            <h2>Smart add</h2>
-            <p class="hint">Type naturally, for example: "Spent ₹500 on dinner yesterday" or "Received salary 25000".</p>
-            <form action="{{ url_for('smart_add') }}" method="POST" class="stack-form" id="smart-form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <input type="text" name="smart_input" id="smart_input" placeholder="Enter your expense or income in plain English" required>
-                <button type="submit">Smart Add</button>
-            </form>
-            <p id="smart-preview" class="hint"></p>
-        </div>
-
-        <div class="card">
-            <h2>Recent transactions</h2>
-            <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Category</th>
-                        <th>Amount</th>
-                        <th>Date</th>
-                        <th>Description</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in expenses %}
-                    <tr>
-                        <td><span class="pill {{ row['tx_type'] }}">{{ row['tx_type'] }}</span></td>
-                        <td><strong>{{ row['CATEGORY'] }}</strong></td>
-                        <td>₹{{ "%.2f"|format(row['AMOUNT']) }}</td>
-                        <td>{{ row['DATE'] }}</td>
-                        <td>{{ row['description'] }}</td>
-                        <td class="actions">
-                            <a href="{{ url_for('edit', id=row['id']) }}" class="btn-edit">Edit</a>
-                            <form action="{{ url_for('delete', id=row['id']) }}" method="POST" class="inline-form" onsubmit="return confirm('Delete this transaction?');">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                <button type="submit" class="btn-delete">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            </div>
-            {% if not expenses %}
-                <p class="empty-note">No transactions yet. Add your first income or expense above.</p>
-            {% endif %}
-        </div>
-
-        <div class="card settings-card">
-            <div>
-                <h2>Settings</h2>
-                <form action="{{ url_for('settings') }}" method="POST" class="stack-form">
+        <!-- Quick Manual Add & Budget Controls -->
+        <section class="action-grid">
+            <!-- Manual Add Form -->
+            <div class="card">
+                <h2>Add Transaction</h2>
+                <form action="{{ url_for('add') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <label>Monthly expense budget
-                        <input type="number" step="0.01" min="0" name="budget_limit" placeholder="0 disables warnings" value="{{ insights.budget }}">
-                    </label>
-                    <label>Monthly savings goal
-                        <input type="number" step="0.01" min="0" name="savings_goal" placeholder="0 disables goal" value="{{ insights.savings_goal }}">
-                    </label>
-                    <button type="submit">Save settings</button>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="tx_type">Type</label>
+                            <select id="tx_type" name="tx_type" required>
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <input id="category" type="text" name="category" list="category-list" placeholder="e.g. Food, Transport" required>
+                            <datalist id="category-list">
+                                {% for cat in valid_categories %}
+                                    <option value="{{ cat }}"></option>
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="form-group">
+                            <label for="amount">Amount (₹)</label>
+                            <input id="amount" type="number" step="0.01" min="0.01" name="amount" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="date">Date</label>
+                            <input id="date" type="date" name="date" value="{{ today }}" required>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label for="description">Description (optional)</label>
+                        <input id="description" type="text" name="description" placeholder="Short note, merchant or item details">
+                    </div>
+                    <button type="submit" class="btn-primary">+ Save Transaction</button>
                 </form>
             </div>
-            <div>
-                <h2>Export</h2>
-                <a href="{{ url_for('export_csv') }}" class="btn-export">Download CSV</a>
-                <p class="hint">All-time totals: income ₹{{ "%.2f"|format(insights.all_income) }}, expenses ₹{{ "%.2f"|format(insights.all_expense) }}, balance ₹{{ "%.2f"|format(insights.balance) }}.</p>
+
+            <!-- Settings & Export -->
+            <div class="card">
+                <h2>Budget & Export</h2>
+                <form action="{{ url_for('settings') }}" method="POST" style="margin-bottom: 18px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="budget_limit">Monthly Budget Limit (₹)</label>
+                        <input id="budget_limit" type="number" step="0.01" min="0" name="budget_limit" placeholder="0 disables warnings" value="{{ insights.budget }}">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label for="savings_goal">Monthly Savings Target (₹)</label>
+                        <input id="savings_goal" type="number" step="0.01" min="0" name="savings_goal" placeholder="0 disables goal" value="{{ insights.savings_goal }}">
+                    </div>
+                    <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">Save Targets</button>
+                </form>
+
+                <div style="border-top: 1px solid var(--bg-glass-border); padding-top: 14px;">
+                    <a href="{{ url_for('export_csv') }}" class="btn-edit" style="display: block; text-align: center; padding: 10px; font-weight: 600;">📥 Export CSV Telemetry</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Unusual Spending Callout Banner (if detected) -->
+        {% if insights.unusual_expenses %}
+        <div class="unusual-spending-banner">
+            <div class="unusual-header">
+                <span>⚠️ Unusual Spending Detected</span>
+            </div>
+            <p style="font-size: 13px; color: #fca5a5; margin-bottom: 10px;">
+                The following transactions were significantly higher (≥ 2.5x) than your typical average for that category:
+            </p>
+            <div class="unusual-list">
+                {% for item in insights.unusual_expenses %}
+                    <span class="unusual-pill">
+                        <strong>{{ item.category }}</strong>: ₹{{ "%.2f"|format(item.amount) }} on {{ item.date }}
+                        ({{ item.multiple }}x typical avg of ₹{{ "%.2f"|format(item.category_avg) }})
+                    </span>
+                {% endfor %}
             </div>
         </div>
+        {% endif %}
 
-        <footer>Logged in as {{ user_name }}</footer>
+        <!-- Recent Transactions Table with Search & Filter Tabs -->
+        <section class="tx-table-card">
+            <div class="tx-header-row">
+                <h2>Recent Transactions</h2>
+                <div class="tx-controls">
+                    <div class="tx-filter-tabs">
+                        <button type="button" class="tx-filter-tab active" data-filter="all">All</button>
+                        <button type="button" class="tx-filter-tab" data-filter="expense">Expenses</button>
+                        <button type="button" class="tx-filter-tab" data-filter="income">Income</button>
+                    </div>
+                    <input type="text" id="tx-search-input" class="tx-search-input" placeholder="Search records...">
+                </div>
+            </div>
+
+            <div class="tx-table-container">
+                <table class="tx-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in expenses %}
+                        <tr data-tx-type="{{ row['tx_type'] }}">
+                            <td>
+                                <span class="pill {{ row['tx_type'] }}">{{ row['tx_type'] }}</span>
+                            </td>
+                            <td><strong>{{ row['CATEGORY'] }}</strong></td>
+                            <td>
+                                <span class="tx-amount {{ row['tx_type'] }}">
+                                    {% if row['tx_type'] == 'income' %}+{% else %}-{% endif %}₹{{ "%.2f"|format(row['AMOUNT']) }}
+                                </span>
+                            </td>
+                            <td>{{ row['DATE'] }}</td>
+                            <td>{{ row['description'] if row['description'] else '—' }}</td>
+                            <td>
+                                <div class="tx-actions">
+                                    <a href="{{ url_for('edit', id=row['id']) }}" class="btn-edit">Edit</a>
+                                    <form action="{{ url_for('delete', id=row['id']) }}" method="POST" style="display: inline;" onsubmit="return confirm('Archive and delete this transaction?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="btn-delete">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if not expenses %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">💳</div>
+                    <h3>No Transactions Recorded</h3>
+                    <p>Use the Smart Financial Copilot bar above or the manual form to add your first transaction.</p>
+                </div>
+            {% endif %}
+
+            <div id="tx-filter-empty" class="empty-state hidden">
+                <p>No transactions match your search filter.</p>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <div>SmartSpend &middot; Personal Financial Command Center</div>
+            <div class="footer-badges">
+                <span>🔒 256-bit Security</span>
+                <span>&bull;</span>
+                <span>⚡ SQLite & PostgreSQL Hybrid</span>
+                <span>&bull;</span>
+                <span>Logged in as {{ user_name }}</span>
+            </div>
+        </footer>
     </div>
 
     <script src="{{ url_for('static', filename='app.js') }}"></script>

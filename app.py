@@ -84,6 +84,7 @@ VALID_CATEGORIES = [
     "Stationery",
     "Furniture",
     "Education",
+    "Investment",
     "Agriculture",
     "Industrial",
     "Spiritual & Religious",
@@ -410,9 +411,26 @@ def api_data():
                 "all_income": insights["all_income"],
                 "all_expense": insights["all_expense"],
                 "balance": insights["balance"],
+                "health_score": insights["health_score"],
+                "health_grade": insights["health_grade"],
+                "health_status_class": insights["health_status_class"],
+                "daily_average": insights["daily_average"],
+                "savings_rate": insights["savings_rate"],
+                "budget_used_percent": insights["budget_used_percent"],
+                "budget_remaining": insights["budget_remaining"],
+                "budget_status": insights["budget_status"],
             },
         }
     )
+
+
+@app.route("/api/copilot")
+@login_required
+def api_copilot():
+    user_id = session["USER_ID"]
+    insights = get_insights(user_id)
+    return jsonify(insights)
+
 
 
 def parse_money_or_zero(raw_value):

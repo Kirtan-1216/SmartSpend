@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartSpend | History</title>
+    <title>SmartSpend | Deletion Audit History</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -11,57 +11,87 @@
         {% if messages %}
             <div class="flash-messages">
                 {% for category, message in messages %}
-                    <div class="flash flash-toast {{ category }}">{{ message }}</div>
+                    <div class="flash {{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="flash-close">&times;</button>
+                    </div>
                 {% endfor %}
             </div>
         {% endif %}
     {% endwith %}
 
     <div class="dashboard-container">
-        <div class="navbar">
-            <h2>Deletion History</h2>
-            <div class="nav-links">
+        <!-- Top Navigation -->
+        <header class="navbar">
+            <div class="nav-brand">
+                <div class="nav-logo-icon">₹</div>
+                <div>
+                    <h2>SmartSpend</h2>
+                </div>
+                <span class="brand-badge">Audit</span>
+            </div>
+            <nav class="nav-links">
                 <a href="{{ url_for('home') }}">Dashboard</a>
-                <a href="{{ url_for('summary') }}">Insights</a>
+                <a href="{{ url_for('summary') }}">Copilot Insights</a>
                 <a href="{{ url_for('history') }}" class="active">History</a>
                 <a href="{{ url_for('logout') }}" class="nav-logout">Logout</a>
+            </nav>
+        </header>
+
+        <section class="command-header">
+            <div class="greeting-block">
+                <h1>Deletion History & Audit Log 🕒</h1>
+                <p>Archived transactions deleted by {{ user_name }}. Preserved for auditing and accountability.</p>
             </div>
-        </div>
+        </section>
 
-        <div class="card">
-            <h2>Deleted transactions</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Category</th>
-                        <th>Amount</th>
-                        <th>Original date</th>
-                        <th>Deleted at</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in history %}
-                    <tr>
-                        <td><span class="pill {{ row['tx_type'] }}">{{ row['tx_type'] }}</span></td>
-                        <td><strong>{{ row['CATEGORY'] }}</strong></td>
-                        <td>₹{{ "%.2f"|format(row['AMOUNT']) }}</td>
-                        <td>{{ row['EXPENSE_DATE'] }}</td>
-                        <td class="deleted-at">{{ row['DELETED_AT'] }}</td>
-                        <td>{{ row['description'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <section class="tx-table-card">
+            <div class="tx-table-container">
+                <table class="tx-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>Transaction Date</th>
+                            <th>Deleted At</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in history %}
+                        <tr>
+                            <td>
+                                <span class="pill {{ row['tx_type'] }}">{{ row['tx_type'] }}</span>
+                            </td>
+                            <td><strong>{{ row['CATEGORY'] }}</strong></td>
+                            <td class="tx-amount {{ row['tx_type'] }}">
+                                ₹{{ "%.2f"|format(row['AMOUNT']) }}
+                            </td>
+                            <td>{{ row['EXPENSE_DATE'] }}</td>
+                            <td style="color: #f87171; font-size: 13px; font-family: 'JetBrains Mono', monospace;">
+                                {{ row['DELETED_AT'] }}
+                            </td>
+                            <td>{{ row['description'] if row['description'] else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
             {% if not history %}
-                <p class="empty-note">No deleted records found.</p>
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <h3>No Deleted Transactions Found</h3>
+                    <p>When you delete a record from the dashboard, it will be securely archived here with timestamp auditing.</p>
+                </div>
             {% endif %}
-        </div>
+        </section>
 
-        <footer>Viewing history for {{ user_name }}</footer>
+        <footer>
+            <div>Audit log maintained for {{ user_name }}</div>
+        </footer>
     </div>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
-
 </html>
